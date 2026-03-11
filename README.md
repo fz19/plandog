@@ -8,14 +8,12 @@ PlanDog 서버에 접속하여 터미널에서 블루프린트 작업을 수행�
 
 **macOS / Linux:**
 ```bash
-./install.sh
+curl -fsSL https://plandog.net/install.sh | bash
 ```
 
-**Windows (PowerShell):**
-```powershell
-# 실행 정책이 제한되어 있다면 먼저 실행:
-# Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
-.\install.ps1
+**Windows (cmd / PowerShell):**
+```
+powershell -ExecutionPolicy Bypass -Command "irm https://plandog.net/install.ps1 | iex"
 ```
 
 **제거:**

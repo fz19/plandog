@@ -74,11 +74,10 @@ function Install-PlandogCli {
         # not installed
     }
 
-    # 로컬 vs 원격 판별
+    # 로컬 vs 원격 판별 ($PSScriptRoot는 irm|iex 실행 시 빈 문자열)
     $scriptDir = $PSScriptRoot
-    $localPyproject = Join-Path $scriptDir "pyproject.toml"
 
-    if (Test-Path $localPyproject) {
+    if ($scriptDir -and (Test-Path (Join-Path $scriptDir "pyproject.toml"))) {
         Write-Info "로컬 프로젝트에서 설치합니다..."
         $installPath = $scriptDir
     } else {
