@@ -13,7 +13,7 @@ curl -fsSL https://plandog.net/install.sh | bash
 
 **Windows (cmd / PowerShell):**
 ```
-powershell -ExecutionPolicy Bypass -Command "irm https://plandog.net/install.ps1 | iex"
+powershell -ExecutionPolicy Bypass -Command "iwr https://plandog.net/install.ps1 -OutFile $env:TEMP\pd.ps1; & $env:TEMP\pd.ps1; del $env:TEMP\pd.ps1"
 ```
 
 **제거:**

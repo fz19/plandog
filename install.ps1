@@ -1,4 +1,4 @@
-# plandog-cli 설치 스크립트 (Windows PowerShell)
+﻿# plandog-cli 설치 스크립트 (Windows PowerShell)
 $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
