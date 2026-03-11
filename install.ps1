@@ -1,6 +1,8 @@
 # plandog-cli 설치 스크립트 (Windows PowerShell)
 $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
 
 # ── Color helpers ────────────────────────────────────────────────
 function Write-Info    { param([string]$Message) Write-Host "[INFO] $Message" -ForegroundColor Blue }
@@ -102,7 +104,7 @@ function Install-PlandogCli {
             exit 1
         }
 
-        $installPath = Join-Path $tmpDir "plandog-main\plandog-cli"
+        $installPath = Join-Path $tmpDir "plandog-main"
 
         if (-not (Test-Path (Join-Path $installPath "pyproject.toml"))) {
             Write-Err "다운로드한 패키지에서 plandog-cli를 찾을 수 없습니다."

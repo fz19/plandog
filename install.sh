@@ -114,7 +114,7 @@ install_plandog_cli() {
 
         mkdir -p "$tmp_dir"
         unzip -q "$tmp_zip" -d "$tmp_dir"
-        install_path="$tmp_dir/plandog-main/plandog-cli"
+        install_path="$tmp_dir/plandog-main"
 
         if [ ! -f "$install_path/pyproject.toml" ]; then
             error "다운로드한 패키지에서 plandog-cli를 찾을 수 없습니다."
