@@ -2,7 +2,28 @@
 
 PlanDog 서버에 접속하여 터미널에서 블루프린트 작업을 수행하는 원격 클라이언트입니다.
 
-## 설치
+## 빠른 설치
+
+설치 스크립트가 uv 설치부터 CLI 설치, API 키 설정까지 한 번에 처리합니다.
+
+**macOS / Linux:**
+```bash
+./install.sh
+```
+
+**Windows (PowerShell):**
+```powershell
+# 실행 정책이 제한되어 있다면 먼저 실행:
+# Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+.\install.ps1
+```
+
+**제거:**
+```bash
+uv tool uninstall plandog-cli
+```
+
+## 설치 (수동)
 
 ```bash
 # uv (권장)
