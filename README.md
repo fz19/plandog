@@ -42,18 +42,21 @@ uv sync --all-extras
 ## 사용법
 
 ```bash
-# 기본 접속
+# 기본 접속 (기본 서버: wss://plandog.net:8764)
+plandog-cli -k YOUR_API_KEY
+
+# 환경변수로 API 키 설정 후 바로 접속
+export PLANDOG_API_KEY=YOUR_API_KEY
+plandog-cli
+
+# 다른 서버에 접속
 plandog-cli ws://your-server:8765 -k YOUR_API_KEY
 
-# 환경변수로 API 키 설정
-export PLANDOG_API_KEY=YOUR_API_KEY
-plandog-cli ws://your-server:8765
-
 # 블루프린트 업로드와 함께 새 세션 시작
-plandog-cli ws://your-server:8765 -k YOUR_API_KEY -u ./my-blueprint
+plandog-cli -k YOUR_API_KEY -u ./my-blueprint
 
 # 다운로드 저장 경로 지정
-plandog-cli ws://your-server:8765 -k YOUR_API_KEY -d ./downloads
+plandog-cli -k YOUR_API_KEY -d ./downloads
 ```
 
 ### CLI 옵션

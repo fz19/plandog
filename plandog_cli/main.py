@@ -20,7 +20,7 @@ console = Console()
 
 @app.command()
 def main(
-    host: str = typer.Argument(help="서버 주소 (예: ws://localhost:8765 또는 localhost:8765)"),
+    host: str = typer.Argument("wss://plandog.net:8764", help="서버 주소 (기본: wss://plandog.net:8764)"),
     api_key: Optional[str] = typer.Option(
         None, "--api-key", "-k",
         help="API 키 (환경변수 PLANDOG_API_KEY 우선)",
