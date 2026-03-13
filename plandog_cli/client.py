@@ -167,9 +167,35 @@ class PlandogClient:
         await self._send({"type": MSG_CANCEL})
 
     async def request_download(self) -> Optional[dict]:
-        """Request a download. Returns download_data or download_none message."""
-        await self._send({"type": MSG_DOWNLOAD})
-        return await self._wait_for(MSG_DOWNLOAD_DATA, MSG_DOWNLOAD_NONE, MSG_ERROR, timeout=60)
+        """Download session files via HTTP. Falls back to WS if no session_id."""
+        if not self._session_id:
+            # Fallback to WS-based download for older servers
+            await self._send({"type": MSG_DOWNLOAD})
+            return await self._wait_for(MSG_DOWNLOAD_DATA, MSG_DOWNLOAD_NONE, MSG_ERROR, timeout=60)
+
+        import httpx
+
+        # ws(s)://host:port/path → http(s)://host:port
+        http_url = self._url.replace("wss://", "https://").replace("ws://", "http://")
+        # Strip any path component (e.g. ws://host:port/ws → http://host:port)
+        from urllib.parse import urlparse, urlunparse
+        parsed = urlparse(http_url)
+        base_url = urlunparse((parsed.scheme, parsed.netloc, "", "", "", ""))
+        url = f"{base_url}/download/{self._session_id}"
+
+        async with httpx.AsyncClient(timeout=60) as http:
+            resp = await http.get(url, headers={"X-Api-Key": self._api_key})
+
+        if resp.status_code == 204:
+            return {"type": "download_none"}
+        elif resp.status_code == 200:
+            return {
+                "type": "download_data",
+                "filename": _parse_filename(resp.headers.get("content-disposition", "")),
+                "data_bytes": resp.content,
+            }
+        else:
+            return {"type": "error", "message": f"HTTP {resp.status_code}"}
 
     async def close_session(self, force: bool = False) -> dict:
         """Close current session. Returns session_closed or close_confirm_needed."""
@@ -197,3 +223,15 @@ class PlandogClient:
 
 # Python 3.11+ AsyncIterator type alias
 from typing import AsyncIterator  # noqa: E402
+
+
+def _parse_filename(content_disposition: str) -> str:
+    """Extract filename from Content-Disposition header."""
+    if not content_disposition:
+        return "download.zip"
+    for part in content_disposition.split(";"):
+        part = part.strip()
+        if part.startswith("filename="):
+            name = part[len("filename="):]
+            return name.strip('"').strip("'")
+    return "download.zip"

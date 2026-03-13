@@ -50,3 +50,12 @@ def save_download(data: str, dest: str | Path) -> Path:
         zf.extractall(dest_path)
 
     return dest_path
+
+
+def save_download_bytes(data: bytes, dest: str | Path) -> Path:
+    """Extract a zip from raw bytes to dest. Returns the dest path."""
+    dest_path = Path(dest).resolve()
+    dest_path.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(io.BytesIO(data)) as zf:
+        zf.extractall(dest_path)
+    return dest_path

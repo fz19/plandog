@@ -360,13 +360,21 @@ async def _handle_download(client, dest: str) -> None:
         if reply.get("type") == "download_none":
             console.print("[dim]다운로드할 파일이 없습니다.[/dim]")
         elif reply.get("type") == "download_data":
-            from plandog_cli.transfer import save_download
-
             filename = reply.get("filename", "download.zip")
             dest_path = Path(dest).resolve()
             if dest_path.is_dir():
                 dest_path = dest_path / filename
-            saved = save_download(reply["data"], dest_path.parent)
+
+            if "data_bytes" in reply:
+                # HTTP response: raw bytes
+                from plandog_cli.transfer import save_download_bytes
+
+                saved = save_download_bytes(reply["data_bytes"], dest_path.parent)
+            else:
+                # WS fallback: base64-encoded data
+                from plandog_cli.transfer import save_download
+
+                saved = save_download(reply["data"], dest_path.parent)
             console.print(f"[green]✓ 다운로드 완료: {saved}[/green]")
         elif reply.get("type") == "error":
             console.print(f"[red]다운로드 오류: {reply.get('message', '')}[/red]")
