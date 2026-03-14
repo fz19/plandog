@@ -85,14 +85,14 @@ async def _run(url: str, api_key: str, upload: Optional[str], download_dir: Opti
                     if role == "user":
                         console.print(f"[bold green]You[/bold green]: {text}")
                     elif role == "tool":
+                        name = entry.get("name", "")
+                        label = f"[dim]⚙ {name}:[/dim] " if name else "  "
                         if text.startswith("✓"):
-                            console.print(f"  [green]{text}[/green]")
+                            console.print(f"  {label}[green]{text}[/green]")
                         elif text.startswith("✗"):
-                            console.print(f"  [red]{text}[/red]")
-                        elif text.startswith("↳"):
-                            console.print(f"    [dim]{text}[/dim]")
+                            console.print(f"  {label}[red]{text}[/red]")
                         else:
-                            console.print(f"  [dim]⚙ {text}[/dim]")
+                            console.print(f"  {label}[dim]{text}[/dim]")
                     else:
                         console.print(f"[bold blue]PlanDog[/bold blue]: {text}")
                 console.print("[dim]── 대화 시작 ──[/dim]\n")
