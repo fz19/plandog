@@ -256,7 +256,7 @@ async def run_interactive_loop(client, download_dir: Optional[str] = None) -> No
     prompt = PromptSession()
     display = StreamingDisplay()
 
-    console.print("[dim]'/download [경로]' — 다운로드  '/quit' — 종료  '/auto [N]' — 자동 진행[/dim]\n")
+    console.print("[dim]'/files' — 파일 목록  '/get <파일>' — 개별 다운로드  '/download' — 전체 다운로드  '/quit' — 종료  '/auto [N]' — 자동 진행[/dim]\n")
 
     session_closed: list = [False]
     remote_responding: list = [False]
@@ -310,6 +310,20 @@ async def run_interactive_loop(client, download_dir: Optional[str] = None) -> No
             await _handle_quit(client, display)
             break
 
+        if text.lower() == "/files":
+            await _handle_files(client)
+            continue
+
+        if text.lower().startswith("/get"):
+            parts = text.split(maxsplit=2)
+            if len(parts) < 2:
+                console.print("[yellow]사용법: /get <파일경로> [저장경로][/yellow]")
+                continue
+            remote_path = parts[1]
+            dest = parts[2] if len(parts) > 2 else (download_dir or ".")
+            await _handle_file_download(client, remote_path, dest)
+            continue
+
         if text.lower().startswith("/download"):
             parts = text.split(maxsplit=1)
             dest = parts[1] if len(parts) > 1 else (download_dir or ".")
@@ -348,6 +362,62 @@ async def _handle_quit(client, display: StreamingDisplay) -> None:
             console.print("[dim]서버와의 연결이 이미 끊어진 상태입니다.[/dim]")
         else:
             console.print(f"[red]종료 오류: {e}[/red]")
+
+
+def _format_size(size: int) -> str:
+    """바이트를 사람이 읽을 수 있는 크기로 변환."""
+    for unit in ("B", "KB", "MB", "GB"):
+        if size < 1024:
+            return f"{size:.1f} {unit}" if unit != "B" else f"{size} {unit}"
+        size /= 1024
+    return f"{size:.1f} TB"
+
+
+async def _handle_files(client) -> None:
+    """Handle /files: display file list from server."""
+    try:
+        files = await client.request_file_list()
+        if not files:
+            console.print("[dim]파일이 없습니다.[/dim]")
+            return
+
+        from rich.table import Table
+
+        table = Table(title="세션 파일 목록")
+        table.add_column("파일 경로", style="cyan")
+        table.add_column("크기", justify="right")
+        table.add_column("수정일시", style="dim")
+
+        for f in files:
+            table.add_row(
+                f["path"],
+                _format_size(f["size"]),
+                f["mtime"],
+            )
+
+        console.print(table)
+        console.print(f"[dim]총 {len(files)}개 파일[/dim]")
+    except Exception as e:
+        console.print(f"[red]파일 목록 조회 실패: {e}[/red]")
+
+
+async def _handle_file_download(client, remote_path: str, dest: str) -> None:
+    """Handle /get: download a single file from server."""
+    console.print(f"[dim]다운로드 중: {remote_path}[/dim]")
+    try:
+        filename, content = await client.request_file_download(remote_path)
+        dest_path = Path(dest).resolve()
+        if dest_path.is_dir():
+            dest_path = dest_path / remote_path
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        dest_path.write_bytes(content)
+        console.print(f"[green]✓ 저장 완료: {dest_path} ({_format_size(len(content))})[/green]")
+    except FileNotFoundError:
+        console.print(f"[red]파일을 찾을 수 없습니다: {remote_path}[/red]")
+    except PermissionError:
+        console.print(f"[red]접근이 거부되었습니다: {remote_path}[/red]")
+    except Exception as e:
+        console.print(f"[red]파일 다운로드 실패: {e}[/red]")
 
 
 async def _handle_download(client, dest: str) -> None:

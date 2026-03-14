@@ -166,6 +166,14 @@ class PlandogClient:
         """Send cancel signal."""
         await self._send({"type": MSG_CANCEL})
 
+    def _http_base_url(self) -> str:
+        """WebSocket URL에서 HTTP base URL을 유도."""
+        from urllib.parse import urlparse, urlunparse
+
+        http_url = self._url.replace("wss://", "https://").replace("ws://", "http://")
+        parsed = urlparse(http_url)
+        return urlunparse((parsed.scheme, parsed.netloc, "", "", "", ""))
+
     async def request_download(self) -> Optional[dict]:
         """Download session files via HTTP. Falls back to WS if no session_id."""
         if not self._session_id:
@@ -175,13 +183,7 @@ class PlandogClient:
 
         import httpx
 
-        # ws(s)://host:port/path → http(s)://host:port
-        http_url = self._url.replace("wss://", "https://").replace("ws://", "http://")
-        # Strip any path component (e.g. ws://host:port/ws → http://host:port)
-        from urllib.parse import urlparse, urlunparse
-        parsed = urlparse(http_url)
-        base_url = urlunparse((parsed.scheme, parsed.netloc, "", "", "", ""))
-        url = f"{base_url}/download/{self._session_id}"
+        url = f"{self._http_base_url()}/download/{self._session_id}"
 
         async with httpx.AsyncClient(timeout=60) as http:
             resp = await http.get(url, headers={"X-Api-Key": self._api_key})
@@ -196,6 +198,44 @@ class PlandogClient:
             }
         else:
             return {"type": "error", "message": f"HTTP {resp.status_code}"}
+
+    async def request_file_list(self) -> list[dict]:
+        """파일 목록 조회: GET /download/{session_id}/_list"""
+        import httpx
+
+        url = f"{self._http_base_url()}/download/{self._session_id}/_list"
+
+        async with httpx.AsyncClient(timeout=30) as http:
+            resp = await http.get(url, headers={"X-Api-Key": self._api_key})
+
+        if resp.status_code == 200:
+            return resp.json()
+        raise RuntimeError(f"파일 목록 조회 실패: HTTP {resp.status_code}")
+
+    async def request_file_download(self, file_path: str) -> tuple[str, bytes]:
+        """개별 파일 다운로드: GET /download/{session_id}/{path}
+
+        Returns (filename, content_bytes).
+        """
+        import httpx
+        from urllib.parse import quote
+
+        # 각 경로 세그먼트를 개별 인코딩
+        encoded_path = "/".join(quote(seg, safe="") for seg in file_path.split("/"))
+        url = f"{self._http_base_url()}/download/{self._session_id}/{encoded_path}"
+
+        async with httpx.AsyncClient(timeout=60) as http:
+            resp = await http.get(url, headers={"X-Api-Key": self._api_key})
+
+        if resp.status_code == 200:
+            filename = _parse_filename(resp.headers.get("content-disposition", ""))
+            return filename, resp.content
+        elif resp.status_code == 404:
+            raise FileNotFoundError(f"파일을 찾을 수 없습니다: {file_path}")
+        elif resp.status_code == 403:
+            raise PermissionError(f"접근이 거부되었습니다: {file_path}")
+        else:
+            raise RuntimeError(f"파일 다운로드 실패: HTTP {resp.status_code}")
 
     async def close_session(self, force: bool = False) -> dict:
         """Close current session. Returns session_closed or close_confirm_needed."""
