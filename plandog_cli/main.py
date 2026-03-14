@@ -79,11 +79,22 @@ async def _run(url: str, api_key: str, upload: Optional[str], download_dir: Opti
             console.print(f"[dim]세션을 이어갑니다. 이력: {len(history)}개 메시지[/dim]")
             if history:
                 console.print("[dim]── 이전 대화 ──[/dim]")
-                for entry in history[-10:]:  # show last 10
+                for entry in history[-20:]:
                     role = entry.get("role", "?")
                     text = entry.get("text", "")
-                    prefix = "[bold green]You[/bold green]" if role == "user" else "[bold blue]PlanDog[/bold blue]"
-                    console.print(f"{prefix}: {text}")
+                    if role == "user":
+                        console.print(f"[bold green]You[/bold green]: {text}")
+                    elif role == "tool":
+                        if text.startswith("✓"):
+                            console.print(f"  [green]{text}[/green]")
+                        elif text.startswith("✗"):
+                            console.print(f"  [red]{text}[/red]")
+                        elif text.startswith("↳"):
+                            console.print(f"    [dim]{text}[/dim]")
+                        else:
+                            console.print(f"  [dim]⚙ {text}[/dim]")
+                    else:
+                        console.print(f"[bold blue]PlanDog[/bold blue]: {text}")
                 console.print("[dim]── 대화 시작 ──[/dim]\n")
         else:
             upload_b64 = None
